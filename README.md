@@ -198,7 +198,4 @@ Distributed under the [MIT License](LICENSE).
 
 ## Author
 
-**Aditya**
-B.Tech Computer Engineering — AI/ML & Data Science
-
-[GitHub](https://github.com/Adityya21) · [LinkedIn](https://linkedin.com/in/yourprofile)
+**Aditya Yashovardhan**
