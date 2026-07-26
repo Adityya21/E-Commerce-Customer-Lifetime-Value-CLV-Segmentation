@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="E-Commerce Customer Lifetime Value prediction and segmentation dashboard with AI-powered retention strategies">
+    <title>{% block title %}CLV & Segmentation{% endblock %} | CLV Intelligence</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Plotly -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    {% block head %}{% endblock %}
+</head>
+<body>
+    {% include 'loader.html' %}
+    
+    <!-- Navigation -->
+    <nav class="nav-bar">
+        <a href="/" class="nav-brand" style="text-decoration: none; color: inherit;" onclick="sessionStorage.setItem('forceLoader', 'true');">
+            <span class="nav-logo">◈</span>
+            <span class="nav-title">CLV Intelligence</span>
+        </a>
+        <div class="nav-links">
+            <a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}">
+                <span class="nav-icon"></span> Dashboard
+            </a>
+            <a href="/segments" class="nav-link {% if request.path == '/segments' %}active{% endif %}">
+                <span class="nav-icon"></span> Segments
+            </a>
+            <a href="/predict" class="nav-link {% if request.path == '/predict' %}active{% endif %}">
+                <span class="nav-icon"></span> Predict CLV
+            </a>
+            <a href="/advisor" class="nav-link {% if request.path == '/advisor' %}active{% endif %}">
+                <span class="nav-icon"></span> AI Advisor
+            </a>
+            <a href="/roi" class="nav-link {% if request.path == '/roi' %}active{% endif %}">
+                <span class="nav-icon"></span> ROI Calculator
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>CLV Intelligence &mdash; MADE BY ADITYA YASHOVARDHAN</p>
+    </footer>
+
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

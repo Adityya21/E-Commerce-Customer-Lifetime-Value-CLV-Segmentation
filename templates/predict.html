@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}Predict CLV{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">CLV Prediction Engine</h1>
+    <p class="page-subtitle">Predict Customer Lifetime Value for new or existing customers</p>
+</div>
+
+<div class="predict-layout">
+    <!-- Input Form -->
+    <div class="predict-form-card">
+        <h3>Customer Features</h3>
+        <form id="predict-form">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="recency">Recency (days since last order)</label>
+                    <input type="number" id="recency" name="recency" value="30" min="0" max="1000" required>
+                </div>
+                <div class="form-group">
+                    <label for="frequency">Frequency (total orders)</label>
+                    <input type="number" id="frequency" name="frequency" value="3" min="1" max="100" required>
+                </div>
+                <div class="form-group">
+                    <label for="monetary">Monetary (avg order value $)</label>
+                    <input type="number" id="monetary" name="monetary" value="450" min="0" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="tenure_days">Tenure (days as customer)</label>
+                    <input type="number" id="tenure_days" name="tenure_days" value="180" min="0" max="1500">
+                </div>
+                <div class="form-group">
+                    <label for="avg_discount">Avg Discount Used (%)</label>
+                    <input type="number" id="avg_discount" name="avg_discount" value="15" min="0" max="100">
+                </div>
+                <div class="form-group">
+                    <label for="avg_quantity">Avg Items per Order</label>
+                    <input type="number" id="avg_quantity" name="avg_quantity" value="2" min="1" max="20">
+                </div>
+                <div class="form-group">
+                    <label for="avg_rating">Avg Rating Given</label>
+                    <input type="number" id="avg_rating" name="avg_rating" value="3.5" min="1" max="5" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label for="return_rate">Return Rate (0-1)</label>
+                    <input type="number" id="return_rate" name="return_rate" value="0.1" min="0" max="1" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label for="category_diversity">Categories Purchased</label>
+                    <input type="number" id="category_diversity" name="category_diversity" value="3" min="1" max="7">
+                </div>
+                <div class="form-group">
+                    <label for="avg_product_price">Avg Product Price ($)</label>
+                    <input type="number" id="avg_product_price" name="avg_product_price" value="300" min="0" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label for="dominant_category">Dominant Category</label>
+                    <select id="dominant_category" name="dominant_category">
+                        <option value="Electronics">Electronics</option>
+                        <option value="Fashion">Fashion</option>
+                        <option value="Beauty">Beauty</option>
+                        <option value="Home Decor">Home Decor</option>
+                        <option value="Sports">Sports</option>
+                        <option value="Footwear">Footwear</option>
+                        <option value="Accessories">Accessories</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="dominant_channel">Acquisition Channel</label>
+                    <select id="dominant_channel" name="dominant_channel">
+                        <option value="Organic">Organic</option>
+                        <option value="Social Media">Social Media</option>
+                        <option value="Paid Ads">Paid Ads</option>
+                        <option value="Direct">Direct</option>
+                        <option value="Email">Email</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="country">Country</label>
+                    <select id="country" name="country">
+                        <option value="USA">USA</option>
+                        <option value="UK">UK</option>
+                        <option value="Canada">Canada</option>
+                        <option value="India">India</option>
+                        <option value="UAE">UAE</option>
+                        <option value="Germany">Germany</option>
+                        <option value="Australia">Australia</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="dominant_payment">Payment Method</label>
+                    <select id="dominant_payment" name="dominant_payment">
+                        <option value="Credit Card">Credit Card</option>
+                        <option value="Debit Card">Debit Card</option>
+                        <option value="PayPal">PayPal</option>
+                        <option value="Apple Pay">Apple Pay</option>
+                        <option value="Cash On Delivery">Cash on Delivery</option>
+                    </select>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg" id="predict-btn">
+                <span class="btn-text">Predict CLV</span>
+                <span class="btn-loading" style="display:none">⏳ Predicting...</span>
+            </button>
+        </form>
+    </div>
+
+    <!-- Result Card -->
+    <div class="predict-result-card" id="predict-result" style="display:none">
+        <div class="result-header">
+            <h3>Prediction Result</h3>
+            <span class="confidence-badge" id="result-confidence"></span>
+        </div>
+        <div class="result-clv">
+            <span class="result-label">Predicted Customer Lifetime Value</span>
+            <span class="result-value" id="result-clv-value">$0</span>
+        </div>
+        <div class="result-segment">
+            <!-- removed emoji span -->
+            <div>
+                <span class="result-segment-name" id="result-segment-name"></span>
+                <span class="result-segment-label">Assigned Segment</span>
+            </div>
+        </div>
+        <div class="result-note" id="cold-start-note" style="display:none">
+            <span class="note-icon"></span>
+            <span class="note-text">Cold-start prediction: This customer has limited history. CLV was estimated using our hybrid BG/NBD + ML ensemble with confidence-weighted blending.</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('predict-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const btn = document.getElementById('predict-btn');
+    btn.querySelector('.btn-text').style.display = 'none';
+    btn.querySelector('.btn-loading').style.display = 'inline';
+    btn.disabled = true;
+
+    const formData = new FormData(this);
+    const data = {};
+
+    // Collect form data with proper types
+    for (let [key, value] of formData.entries()) {
+        const input = document.getElementById(key);
+        if (input && (input.type === 'number')) {
+            data[key] = parseFloat(value);
+        } else {
+            data[key] = value;
+        }
+    }
+
+    // Compute derived fields
+    data.avg_shipping = 12;
+    data.total_items = Math.round(data.avg_quantity * data.frequency);
+    data.n_returns = Math.round(data.return_rate * data.frequency);
+    data.purchase_rate = data.tenure_days > 0 ? data.frequency / data.tenure_days : 0.01;
+    data.avg_order_value = data.monetary;
+
+    try {
+        const response = await fetch('/api/predict', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (result.error) {
+            alert('Prediction error: ' + result.error);
+            return;
+        }
+
+        // Show result
+        const resultCard = document.getElementById('predict-result');
+        resultCard.style.display = 'block';
+        resultCard.classList.add('result-animate');
+
+        document.getElementById('result-clv-value').textContent = '$' + result.predicted_clv.toLocaleString();
+        // removed emoji assignment
+        document.getElementById('result-segment-name').textContent = result.segment_name;
+        document.getElementById('result-segment-name').style.color = result.segment_color;
+
+        const confBadge = document.getElementById('result-confidence');
+        confBadge.textContent = result.confidence.toUpperCase() + ' confidence';
+        confBadge.className = 'confidence-badge confidence-' + result.confidence;
+
+        // Show cold-start note for low-frequency customers
+        const coldNote = document.getElementById('cold-start-note');
+        coldNote.style.display = data.frequency <= 2 ? 'flex' : 'none';
+
+    } catch(err) {
+        alert('Error: ' + err.message);
+    } finally {
+        btn.querySelector('.btn-text').style.display = 'inline';
+        btn.querySelector('.btn-loading').style.display = 'none';
+        btn.disabled = false;
+    }
+});
+</script>
+{% endblock %}

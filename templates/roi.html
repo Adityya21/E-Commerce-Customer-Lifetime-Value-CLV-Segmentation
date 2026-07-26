@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}ROI Calculator{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">ROI Calculator</h1>
+    <p class="page-subtitle">Estimate revenue impact of retention campaigns by customer segment</p>
+</div>
+
+<div class="roi-layout">
+    <div class="roi-controls-card">
+        <h3>Campaign Parameters</h3>
+
+        <div class="roi-form">
+            <div class="form-group">
+                <label for="roi-segment">Target Segment</label>
+                <select id="roi-segment" class="form-select">
+                    {% for seg_id, prof in profiles.items() %}
+                    <option value="{{ seg_id }}">{{ prof.persona_name }} ({{ "{:,}".format(prof.size) }} customers)</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="roi-uplift">Retention Improvement: <span id="uplift-value">15</span>%</label>
+                <input type="range" id="roi-uplift" min="1" max="30" value="15" class="slider">
+                <div class="slider-labels">
+                    <span>1%</span>
+                    <span>15%</span>
+                    <span>30%</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="roi-months">Projection Period: <span id="months-value">12</span> months</label>
+                <input type="range" id="roi-months" min="3" max="24" value="12" class="slider">
+                <div class="slider-labels">
+                    <span>3mo</span>
+                    <span>12mo</span>
+                    <span>24mo</span>
+                </div>
+            </div>
+
+            <button id="calculate-roi-btn" class="btn btn-primary btn-lg">Calculate ROI</button>
+        </div>
+    </div>
+
+    <div class="roi-results-card" id="roi-results">
+        <h3>Revenue Impact Analysis</h3>
+
+        <div class="roi-headline" id="roi-headline">
+            <p>Select parameters and click Calculate to see projections.</p>
+        </div>
+
+        <div class="roi-metrics-grid" id="roi-metrics" style="display:none">
+            <div class="roi-metric">
+                <span class="roi-metric-icon"></span>
+                <span class="roi-metric-value" id="roi-segment-size">0</span>
+                <span class="roi-metric-label">Customers in Segment</span>
+            </div>
+            <div class="roi-metric">
+                <span class="roi-metric-icon"></span>
+                <span class="roi-metric-value roi-danger" id="roi-at-risk">$0</span>
+                <span class="roi-metric-label">Revenue at Risk</span>
+            </div>
+            <div class="roi-metric">
+                <span class="roi-metric-icon"></span>
+                <span class="roi-metric-value" id="roi-churners-before">0</span>
+                <span class="roi-metric-label">Expected Churners (No Action)</span>
+            </div>
+            <div class="roi-metric">
+                <span class="roi-metric-icon"></span>
+                <span class="roi-metric-value roi-success" id="roi-customers-saved">0</span>
+                <span class="roi-metric-label">Customers Saved</span>
+            </div>
+            <div class="roi-metric">
+                <span class="roi-metric-icon"></span>
+                <span class="roi-metric-value roi-success" id="roi-revenue-preserved">$0</span>
+                <span class="roi-metric-label">Revenue Preserved</span>
+            </div>
+            <div class="roi-metric">
+                <span class="roi-metric-icon"></span>
+                <span class="roi-metric-value" id="roi-multiplier">0x</span>
+                <span class="roi-metric-label">ROI Multiplier</span>
+            </div>
+        </div>
+
+        <div class="roi-chart-container" id="roi-chart-container" style="display:none">
+            <div id="roi-comparison-chart"></div>
+        </div>
+    </div>
+</div>
+
+<!-- All Segments Comparison -->
+<div class="section-header" style="margin-top:2rem">
+    <h2>All Segments — Revenue at Risk (12 months, 15% retention uplift)</h2>
+</div>
+<div id="all-segments-roi-chart"></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/roi_calculator.js') }}"></script>
+<script>
+const roiProfiles = {{ profiles|tojson }};
+document.addEventListener('DOMContentLoaded', function() {
+    initROICalculator(roiProfiles);
+});
+</script>
+{% endblock %}

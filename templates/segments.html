@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Segments{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Customer Segments Deep Dive</h1>
+    <p class="page-subtitle">Detailed profiles, SHAP drivers & behavioral patterns per segment</p>
+</div>
+
+{% for seg_id, prof in profiles.items() %}
+<div class="segment-detail-card" style="--segment-color: {{ prof.color }}">
+    <div class="segment-detail-header">
+        <div class="segment-identity">
+            <!-- removed emoji span -->
+            <div>
+                <h2 class="segment-detail-name">{{ prof.persona_name }}</h2>
+                <span class="segment-pct">{{ prof.pct_of_base }}% of customer base ({{ "{:,}".format(prof.size) }} customers)</span>
+            </div>
+        </div>
+        <div class="segment-revenue-badge">
+            <span class="revenue-amount">${{ "{:,.0f}".format(prof.total_revenue) }}</span>
+            <span class="revenue-label">Total Revenue</span>
+        </div>
+    </div>
+
+    <div class="segment-detail-grid">
+        <div class="detail-group">
+            <h4>RFM Metrics</h4>
+            <div class="detail-items">
+                <div class="detail-item">
+                    <span class="detail-label">Recency</span>
+                    <span class="detail-value">{{ prof.avg_recency|int }} days</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Frequency</span>
+                    <span class="detail-value">{{ prof.avg_frequency }} orders</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Monetary (avg/order)</span>
+                    <span class="detail-value">${{ "{:,.0f}".format(prof.avg_monetary) }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">CLV (avg)</span>
+                    <span class="detail-value highlight">${{ "{:,.0f}".format(prof.avg_clv) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-group">
+            <h4>Behavior</h4>
+            <div class="detail-items">
+                <div class="detail-item">
+                    <span class="detail-label">Tenure</span>
+                    <span class="detail-value">{{ prof.avg_tenure_days|int }} days</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Return Rate</span>
+                    <span class="detail-value {% if prof.avg_return_rate > 20 %}text-danger{% endif %}">{{ prof.avg_return_rate }}%</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Category Diversity</span>
+                    <span class="detail-value">{{ prof.avg_category_diversity }} categories</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Avg Discount</span>
+                    <span class="detail-value">{{ prof.avg_discount|int }}%</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Avg Rating</span>
+                    <span class="detail-value">{{ prof.avg_rating }}/5.0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-group">
+            <h4>Preferences</h4>
+            <div class="detail-items">
+                <div class="detail-item">
+                    <span class="detail-label">Top Category</span>
+                    <span class="detail-value">{{ prof.top_category }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Top Channel</span>
+                    <span class="detail-value">{{ prof.top_channel }}</span>
+                </div>
+            </div>
+        </div>
+
+        {% if shap_data and shap_data.segment_shap and seg_id|string in shap_data.segment_shap %}
+        <div class="detail-group">
+            <h4>SHAP — CLV Drivers</h4>
+            <div class="shap-drivers">
+                {% for driver in shap_data.segment_shap[seg_id|string].top_drivers[:5] %}
+                <div class="shap-driver">
+                    <span class="shap-feature">{{ driver.feature }}</span>
+                    <div class="shap-bar-container">
+                        {% set bar_width = (driver.avg_shap_value|abs / 0.5 * 100) %}
+                        <div class="shap-bar {% if driver.avg_shap_value > 0 %}shap-positive{% else %}shap-negative{% endif %}"
+                             style="width: {{ bar_width if bar_width <= 100 else 100 }}%">
+                        </div>
+                    </div>
+                    <span class="shap-value {% if driver.avg_shap_value > 0 %}text-success{% else %}text-danger{% endif %}">
+                        {{ "+" if driver.avg_shap_value > 0 }}{{ "%.3f"|format(driver.avg_shap_value) }}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

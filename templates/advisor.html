@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}AI Retention Advisor{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">AI Retention Advisor</h1>
+    <p class="page-subtitle">LLM-powered retention strategies and marketing copy per customer segment</p>
+</div>
+
+<div class="advisor-layout">
+    <!-- Segment Selector -->
+    <div class="advisor-selector-card">
+        <h3>Select a Segment</h3>
+        <p class="card-desc">Choose a customer segment to generate AI-powered retention strategies, email copy, and risk assessment.</p>
+
+        <div class="segment-selector-grid">
+            {% for seg_id, prof in profiles.items() %}
+            <button class="segment-select-btn" data-segment-id="{{ seg_id }}" style="--segment-color: {{ prof.color }}">
+                <!-- removed emoji span -->
+                <span class="select-name">{{ prof.persona_name }}</span>
+                <span class="select-meta">{{ "{:,}".format(prof.size) }} customers · ${{ "{:,.0f}".format(prof.avg_clv) }} avg CLV</span>
+            </button>
+            {% endfor %}
+        </div>
+
+        <div class="advisor-controls">
+            <select id="provider-select" class="form-select">
+                <option value="groq">GROQ</option>
+            </select>
+            <button id="generate-btn" class="btn btn-primary btn-lg" disabled>
+                <span class="btn-text">Generate Strategy</span>
+                <span class="btn-loading" style="display:none">AI is thinking...</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- AI Response -->
+    <div class="advisor-result-card" id="advisor-result" style="display:none">
+        <div class="advisor-result-header">
+            <h3><span id="result-segment-name"></span></h3>
+            <div class="risk-badge" id="risk-badge"></div>
+        </div>
+
+        <!-- Segment Insight -->
+        <div class="advisor-section">
+            <h4>Segment Insight</h4>
+            <p id="segment-insight" class="insight-text"></p>
+        </div>
+
+        <!-- Retention Tactics -->
+        <div class="advisor-section">
+            <h4>Retention Tactics</h4>
+            <div id="tactics-container"></div>
+        </div>
+
+        <!-- Email Campaign -->
+        <div class="advisor-section">
+            <h4>Email Campaign Hook</h4>
+            <div class="email-preview">
+                <div class="email-subject">
+                    <span class="email-label">Subject:</span>
+                    <span id="email-subject" class="email-subject-text"></span>
+                </div>
+                <div class="email-body">
+                    <p id="email-body"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk Assessment -->
+        <div class="advisor-section">
+            <h4>Risk Assessment</h4>
+            <p id="risk-justification"></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let selectedSegmentId = null;
+const profiles = {{ profiles|tojson }};
+
+// Segment selection
+document.querySelectorAll('.segment-select-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.segment-select-btn').forEach(b => b.classList.remove('selected'));
+        this.classList.add('selected');
+        selectedSegmentId = this.dataset.segmentId;
+        document.getElementById('generate-btn').disabled = false;
+    });
+});
+
+// Generate strategy
+document.getElementById('generate-btn').addEventListener('click', async function() {
+    if (!selectedSegmentId) return;
+
+    const btn = this;
+    btn.querySelector('.btn-text').style.display = 'none';
+    btn.querySelector('.btn-loading').style.display = 'inline';
+    btn.disabled = true;
+
+    const provider = document.getElementById('provider-select').value;
+
+    try {
+        const response = await fetch('/api/advisor', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                segment_id: parseInt(selectedSegmentId),
+                provider: provider
+            })
+        });
+
+        const result = await response.json();
+        displayAdvisorResult(result);
+
+    } catch(err) {
+        alert('Error: ' + err.message);
+    } finally {
+        btn.querySelector('.btn-text').style.display = 'inline';
+        btn.querySelector('.btn-loading').style.display = 'none';
+        btn.disabled = false;
+    }
+});
+
+function displayAdvisorResult(result) {
+    const container = document.getElementById('advisor-result');
+    container.style.display = 'block';
+    container.classList.add('result-animate');
+
+    const prof = profiles[selectedSegmentId];
+    // removed emoji assignment
+    document.getElementById('result-segment-name').textContent = prof.persona_name;
+
+    // Risk badge
+    const riskBadge = document.getElementById('risk-badge');
+    const riskLevel = result.risk_assessment ? result.risk_assessment.level : 'Unknown';
+    riskBadge.textContent = riskLevel + ' Risk';
+    riskBadge.className = 'risk-badge risk-' + riskLevel.toLowerCase();
+
+    // Insight
+    document.getElementById('segment-insight').textContent = result.segment_insight || 'N/A';
+
+    // Tactics
+    const tacticsContainer = document.getElementById('tactics-container');
+    tacticsContainer.innerHTML = '';
+    if (result.retention_tactics) {
+        result.retention_tactics.forEach((tactic, i) => {
+            const card = document.createElement('div');
+            card.className = 'tactic-card';
+            card.innerHTML = `
+                <div class="tactic-header">
+                    <span class="tactic-number">${i + 1}</span>
+                    <h5>${tactic.name}</h5>
+                    <span class="difficulty-badge difficulty-${(tactic.difficulty || 'medium').toLowerCase()}">${tactic.difficulty || 'Medium'}</span>
+                </div>
+                <p class="tactic-desc">${tactic.description}</p>
+                <p class="tactic-impact">${tactic.revenue_impact}</p>
+            `;
+            tacticsContainer.appendChild(card);
+        });
+    }
+
+    // Email
+    document.getElementById('email-subject').textContent = result.email_campaign ? result.email_campaign.subject_line : 'N/A';
+    document.getElementById('email-body').textContent = result.email_campaign ? result.email_campaign.body_hook : 'N/A';
+
+    // Risk justification
+    document.getElementById('risk-justification').textContent = result.risk_assessment ? result.risk_assessment.justification : 'N/A';
+}
+</script>
+{% endblock %}

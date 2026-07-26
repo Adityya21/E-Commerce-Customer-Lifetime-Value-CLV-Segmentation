@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Customer Intelligence Dashboard</h1>
+    <p class="page-subtitle">Real-time CLV predictions, segmentation analytics & revenue insights</p>
+</div>
+
+<!-- KPI Cards -->
+<div class="kpi-grid">
+    <div class="kpi-card kpi-customers">
+        <div class="kpi-icon"></div>
+        <div class="kpi-content">
+            <span class="kpi-value" data-target="{{ total_customers }}">0</span>
+            <span class="kpi-label">Total Customers</span>
+        </div>
+    </div>
+    <div class="kpi-card kpi-revenue">
+        <div class="kpi-icon"></div>
+        <div class="kpi-content">
+            <span class="kpi-value" data-target="{{ total_revenue|int }}" data-prefix="$">$0</span>
+            <span class="kpi-label">Total Revenue</span>
+        </div>
+    </div>
+    <div class="kpi-card kpi-clv">
+        <div class="kpi-icon"></div>
+        <div class="kpi-content">
+            <span class="kpi-value" data-target="{{ avg_clv|int }}" data-prefix="$">$0</span>
+            <span class="kpi-label">Avg Customer LTV</span>
+        </div>
+    </div>
+    <div class="kpi-card kpi-risk">
+        <div class="kpi-icon"></div>
+        <div class="kpi-content">
+            <span class="kpi-value" data-target="{{ total_revenue_at_risk|int }}" data-prefix="$">$0</span>
+            <span class="kpi-label">Revenue at Risk (12mo)</span>
+        </div>
+    </div>
+</div>
+
+<!-- Model Metrics -->
+{% if metrics and metrics.metrics %}
+<div class="section-header">
+    <h2>Model Performance</h2>
+    <span class="badge badge-success">{{ metrics.best_model }}</span>
+</div>
+<div class="metrics-grid">
+    {% for model_name, m in metrics.metrics.items() %}
+    <div class="metric-card {% if model_name == metrics.best_model %}metric-best{% endif %}">
+        <div class="metric-model-name">
+            {{ model_name }}
+            {% if model_name == metrics.best_model %}<span class="badge badge-gold">Best</span>{% endif %}
+        </div>
+        <div class="metric-values">
+            <div class="metric-item">
+                <span class="metric-label">R² Score</span>
+                <span class="metric-number">{{ m.r2 }}</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">RMSE</span>
+                <span class="metric-number">${{ m.rmse|int }}</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">MAPE</span>
+                <span class="metric-number">{{ m.mape }}%</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if metrics.interpretations %}
+<div class="interpretation-box">
+    <h3>Business Interpretation</h3>
+    {% for key, text in metrics.interpretations.items() %}
+    <p><strong>{{ key|upper }}:</strong> {{ text }}</p>
+    {% endfor %}
+</div>
+{% endif %}
+{% endif %}
+
+<!-- Charts Row -->
+<div class="charts-grid">
+    <div class="chart-card">
+        <h3>Customer Segments Distribution</h3>
+        <div id="segment-pie-chart"></div>
+    </div>
+    <div class="chart-card">
+        <h3>Avg CLV by Segment</h3>
+        <div id="clv-bar-chart"></div>
+    </div>
+</div>
+
+<div class="charts-grid">
+    <div class="chart-card">
+        <h3>SHAP Feature Importance — What Drives CLV?</h3>
+        <div id="shap-bar-chart"></div>
+    </div>
+    <div class="chart-card">
+        <h3>Silhouette Score by K</h3>
+        <div id="silhouette-chart"></div>
+    </div>
+</div>
+
+<!-- Segment Cards Overview -->
+<div class="section-header">
+    <h2>Segment Profiles</h2>
+    <a href="/segments" class="btn btn-outline">View Details →</a>
+</div>
+<div class="segment-cards-grid">
+    {% for seg_id, prof in profiles.items() %}
+    <div class="segment-card" style="--segment-color: {{ prof.color }}">
+        <div class="segment-card-header">
+            <!-- removed emoji span -->
+            <span class="segment-name">{{ prof.persona_name }}</span>
+        </div>
+        <div class="segment-card-stats">
+            <div class="stat">
+                <span class="stat-value">{{ "{:,}".format(prof.size) }}</span>
+                <span class="stat-label">Customers</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value">${{ "{:,.0f}".format(prof.avg_clv) }}</span>
+                <span class="stat-label">Avg CLV</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value">{{ prof.avg_recency|int }}d</span>
+                <span class="stat-label">Avg Recency</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value">{{ prof.avg_frequency }}</span>
+                <span class="stat-label">Avg Frequency</span>
+            </div>
+        </div>
+        <div class="segment-card-meta">
+            <span class="meta-tag">{{ prof.top_category }}</span>
+            <span class="meta-tag">{{ prof.top_channel }}</span>
+            <span class="meta-tag">{{ prof.avg_return_rate }}% returns</span>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Pass data to JS for charts
+const segmentData = {{ profiles|tojson }};
+const metricsData = {{ metrics|tojson }};
+const shapData = {{ shap_data|tojson }};
+
+document.addEventListener('DOMContentLoaded', function() {
+    renderSegmentPieChart(segmentData);
+    renderCLVBarChart(segmentData);
+    renderSHAPBarChart(shapData);
+    renderSilhouetteChart(metricsData);
+    animateCounters();
+});
+</script>
+{% endblock %}
