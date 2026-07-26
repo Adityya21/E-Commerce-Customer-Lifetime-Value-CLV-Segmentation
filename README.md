@@ -85,7 +85,7 @@ Feature engineering  →  RFM + tenure, return rate, category diversity
 | Visualization | Plotly, Matplotlib, Seaborn, Chart.js |
 | Web layer | Flask, Jinja2 |
 | GenAI | Groq API (Llama 3.3 70B) |
-| Deployment | Render / Railway / PythonAnywhere |
+| Deployment | Render |
 
 ## Project Structure
 
@@ -198,4 +198,7 @@ Distributed under the [MIT License](LICENSE).
 
 ## Author
 
-**Aditya Yashovardhan**
+**Aditya**
+B.Tech Computer Engineering — AI/ML & Data Science
+
+[GitHub](https://github.com/Adityya21) · [LinkedIn](https://linkedin.com/in/yourprofile)
