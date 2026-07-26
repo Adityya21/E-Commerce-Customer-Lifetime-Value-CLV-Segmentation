@@ -198,7 +198,4 @@ Distributed under the [MIT License](LICENSE).
 
 ## Author
 
-**Aditya**
-B.Tech Computer Engineering 
-
-[GitHub](https://github.com/Adityya21) 
+**Aditya Yashovardhan**
