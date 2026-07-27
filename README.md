@@ -197,3 +197,7 @@ Distributed under the [MIT License](LICENSE).
 ## Author
 
 **Aditya Yashovardhan**
+
+## This project was developed with assistance from:
+- Claude (Anthropic)
+- Antigravity AI
